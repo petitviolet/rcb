@@ -9,7 +9,7 @@ class CircuitBreakerTest < Minitest::Spec
   end
 
   def test_circuit_breaker
-    cb = Rcb.build(:test, max_failure_counts: 1, reset_timeout_msec: 200)
+    cb = Rcb.for(:test, max_failure_count: 1, reset_timeout_msec: 200)
     assert_equal cb.state, :close
     assert_equal cb.run! { 100 }, 100
     assert_raises(CustomError) { cb.run! { raise CustomError } }
