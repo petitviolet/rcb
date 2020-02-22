@@ -9,6 +9,25 @@ class CircuitBreakerTest < Minitest::Spec
     Rcb::Configurations.clear
   end
 
+  def test_configure
+    Rcb.configure(:test) do |config|
+      config.max_failure_count 1
+      config.reset_timeout_msec 100
+    end
+
+    Rcb.configure(:test2) do |config|
+      config.max_failure_count 2
+      config.reset_timeout_msec 200
+    end
+
+    assert_equal Rcb.for(:test).config, Rcb::Config.new(:test, 1, 100)
+    assert_equal Rcb.for(:test2).config, Rcb::Config.new(:test2, 2, 200)
+
+    assert_equal Rcb.for(:test3).config, Rcb::Config.new(:test3, 0, 0)
+    assert_equal Rcb.for(:test3, max_failure_count: 3).config, Rcb::Config.new(:test3, 3, 0)
+    assert_equal Rcb.for(:test3, reset_timeout_msec: 300).config, Rcb::Config.new(:test3, 0, 300)
+  end
+
   def test_circuit_breaker
     cb = Rcb.for(:test, max_failure_count: 1, reset_timeout_msec: 200)
     assert_equal cb.state, :close
