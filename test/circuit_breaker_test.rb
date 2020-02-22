@@ -29,15 +29,16 @@ class CircuitBreakerTest < Minitest::Spec
   end
 
   def test_circuit_breaker
-    Rcb.configure(:test) do |config|
+    Rcb.configure('example.com') do |config|
       config.max_failure_count 1
       config.reset_timeout_msec 200
     end
 
-    cb = Rcb.for(:test)
-    cb2 = Rcb.for(:test)
-    cb3 = Rcb.for(:other)
+    cb = Rcb.for('example.com')
+    cb2 = Rcb.for('example.com')
+    cb3 = Rcb.for('other.example.com')
 
+    rand
     assert_equal cb.state, :close
     assert_equal cb2.state, :close
     assert_equal cb3.state, :close
