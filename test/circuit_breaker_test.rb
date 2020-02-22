@@ -29,32 +29,46 @@ class CircuitBreakerTest < Minitest::Spec
   end
 
   def test_circuit_breaker
-    cb = Rcb.for(:test, max_failure_count: 1, reset_timeout_msec: 200)
+    Rcb.configure(:test) do |config|
+      config.max_failure_count 1
+      config.reset_timeout_msec 200
+    end
+
+    cb = Rcb.for(:test)
+    cb2 = Rcb.for(:test)
+
     assert_equal cb.state, :close
     assert_equal cb.run! { 100 }, 100
     assert_raises(CustomError) { cb.run! { raise CustomError } }
     assert_equal cb.state, :close
+    assert_equal cb2.state, :close
     assert_raises(CustomError) { cb.run! { raise CustomError } }
 
     assert_equal cb.state, :open
+    assert_equal cb2.state, :open
     assert_raises(Rcb::CircuitBreakerOpenError) { cb.run! { raise CustomError } }
 
     sleep 0.1
 
     assert_equal cb.state, :open
+    assert_equal cb2.state, :open
     assert_raises(Rcb::CircuitBreakerOpenError) { cb.run! { raise CustomError } }
 
     sleep 0.1
 
     assert_equal cb.state, :half_open
+    assert_equal cb2.state, :half_open
     assert_raises(CustomError) { cb.run! { raise CustomError } }
     assert_equal cb.state, :open
+    assert_equal cb2.state, :open
 
     sleep 0.2
 
     assert_equal cb.state, :half_open
+    assert_equal cb2.state, :half_open
     assert_equal cb.run! { 100 }, 100
     assert_equal cb.state, :close
+    assert_equal cb2.state, :close
   end
 
 end
