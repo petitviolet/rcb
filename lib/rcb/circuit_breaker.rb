@@ -79,6 +79,7 @@ module Rcb
           :close
         end
       end
+
       private
 
       def try_call(&block)
@@ -100,36 +101,54 @@ module Rcb
 
   class Instance
     def initialize(tag, max_failure_counts:, reset_timeout_msec:)
-      @tag = tag.to_sym
-      @state = State::Close.create
+      @tag = tag.to_s.to_sym
       @max_failure_counts = max_failure_counts
       @reset_timeout_msec = reset_timeout_msec
     end
 
-    def run!(timeout: nil, &block)
+    def run!(&block)
       result =
-        case @state
-        in State::Close
-          @state.run(@max_failure_counts, &block)
-        in State::Open
-          @state.run(@reset_timeout_msec, &block)
-        else
-          raise "Unknown state: #{@state}"
+        case States.of(@tag)
+        in State::Close => s
+          s.run(@max_failure_counts, &block)
+        in State::Open => s
+          s.run(@reset_timeout_msec, &block)
+        in s
+          raise "Unknown state: #{s}"
         end
 
       case result
       in Result::Ok[state, result]
-        @state = state
+        States.update(@tag, state)
         return result
       in Result::Ng[state, error]
-        @state = state
+        States.update(@tag, state)
         raise error
       end
     end
 
     def state
-      @state.state(@reset_timeout_msec)
+      States.of(@tag).state(@reset_timeout_msec)
     end
+
+    private
+
+      class States
+        @states = {}
+
+        def self.of(tag)
+          @states[tag.to_sym] ||= State::Close.create
+        end
+
+        def self.update(tag, state)
+          @states[tag] = state
+        end
+
+        def self.clear
+          @states = {}
+        end
+      end
+
   end
 
 end
