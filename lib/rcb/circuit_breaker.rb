@@ -1,5 +1,6 @@
 require 'byebug'
 require 'rstructural'
+require_relative './configuration'
 
 module Rcb
 
@@ -91,44 +92,42 @@ module Rcb
     end
   end
 
-  def Rcb.build(tag, max_failure_counts:, reset_timeout_msec:)
-    Instance.new(
-      tag,
-      max_failure_counts: max_failure_counts,
-      reset_timeout_msec: reset_timeout_msec,
-    )
+  def Rcb.for(tag, max_failure_count: nil, reset_timeout_msec: nil)
+    config = Rcb::Configurations.for(tag,
+                                     max_failure_count: max_failure_count,
+                                     reset_timeout_msec: reset_timeout_msec)
+    Instance.new(config)
   end
 
   class Instance
-    def initialize(tag, max_failure_counts:, reset_timeout_msec:)
-      @tag = tag.to_s.to_sym
-      @max_failure_counts = max_failure_counts
-      @reset_timeout_msec = reset_timeout_msec
+    # @param config [Rcb::Config]
+    def initialize(config)
+      @config = config
     end
 
     def run!(&block)
       result =
-        case States.of(@tag)
+        case States.of(@config.tag)
         in State::Close => s
-          s.run(@max_failure_counts, &block)
+          s.run(@config.max_failure_count, &block)
         in State::Open => s
-          s.run(@reset_timeout_msec, &block)
+          s.run(@config.reset_timeout_msec, &block)
         in s
           raise "Unknown state: #{s}"
         end
 
       case result
       in Result::Ok[state, result]
-        States.update(@tag, state)
+        States.update(@config.tag, state)
         return result
       in Result::Ng[state, error]
-        States.update(@tag, state)
+        States.update(@config.tag, state)
         raise error
       end
     end
 
     def state
-      States.of(@tag).state(@reset_timeout_msec)
+      States.of(@config.tag).state(@config.reset_timeout_msec)
     end
 
     private
