@@ -1,8 +1,14 @@
-# Rcb
+# Rcb - Ruby Circuit Breaker
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/rcb`. To experiment with that code, run `bin/console` for an interactive prompt.
+[Circuit Breaker](https://martinfowler.com/bliki/CircuitBreaker.html) implementation for/by Ruby.  
+CircuitBreaker is a great pattern to build robust system consists of bunch of microservices.
 
-TODO: Delete this and the text above, and describe your gem
+- Close
+    - A operational state
+- Open
+    - A not operational state
+- Half Open
+    - On the way of it's state to Close from Open.
 
 ## Installation
 
@@ -22,7 +28,52 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+### Import
+
+To use rcb, insert this line:
+
+```ruby
+require 'rcb'
+```
+
+### Configuration
+
+Add configuration with specifying `tag` like:
+
+```ruby
+Rcb.configure('fooo.com') do |config|
+    config.max_failure_count 1
+    config.reset_timeout_msec 100
+end
+
+Rcb.configure('hoge.com') do |config|
+    config.max_failure_count 3
+    config.reset_timeout_msec 300
+end
+```
+
+These configurations are for both 'fooo.com' and 'hoge.com'.
+
+- `max_failure_count`: a threshold for execution failures. 
+    - if the breaker reaches the given `max_failure_count`, enters Open state from Close 
+- `reset_timeout_msec`: milliseconds to wait for next try
+    - after the given `reset_timeout_msec`, the circuit breaker enters a Half-Open state from Open
+
+### Apply circuit breaker to executions
+
+Pass a block to a method `Rcb::Instance#run!` to apply circuit-breaker to a execution.
+
+```ruby
+Rcb.for('example.com').run! do # pass a block
+    if rand(2) == 0
+        raise 'fail!'
+    else
+        true
+    end
+end
+```
+
+You can see more example in [tests](./test).
 
 ## Development
 
