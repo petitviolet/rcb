@@ -4,7 +4,7 @@
 CircuitBreaker is a great pattern to build robust system consists of bunch of microservices.
 
 - Close
-    - A operational state
+    - An operational state
 - Open
     - A not operational state
 - Half Open
