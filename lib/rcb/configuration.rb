@@ -8,6 +8,8 @@ module Rcb
     @logger = Logger.new($stderr)
 
     def self.create(tag, max_failure_count: nil, reset_timeout_msec: nil)
+      raise 'Rcb tag must not be nil' if tag.nil?
+
       if max_failure_count.nil? && reset_timeout_msec.nil?
         @logger.warn("Rcb for '#{tag}' is not configured!")
       end
@@ -20,11 +22,34 @@ module Rcb
     end
   end
 
-  def Rcb.configure(&block)
-    c = Config.new.tap do |c|
-      block.call(c)
-      c.tag = c.tag.to_s.to_sym
-    end.freeze
+  class ConfigBuilder
+    def initialize(tag)
+      @tag = tag
+      @max_failure_count = nil
+      @reset_timeout_msec = nil
+    end
+
+    def max_failure_count(num)
+      @max_failure_count = num
+    end
+
+    def reset_timeout_msec(msec)
+      @reset_timeout_msec = msec
+    end
+
+    def build
+      Config.create(
+        @tag,
+        max_failure_count:@max_failure_count,
+        reset_timeout_msec: @reset_timeout_msec
+      ).freeze
+    end
+  end
+
+  def Rcb.configure(tag, &block)
+    c = ConfigBuilder.new(tag.to_s.to_sym)
+          .tap { |cb| block.call(cb) }
+          .build
 
     Configurations.add(c)
   end
