@@ -6,6 +6,8 @@ require_relative './error'
 
 module Rcb
   class Instance
+    attr_reader :config
+
     # @param config [Rcb::Config]
     def initialize(config)
       @config = config
@@ -13,27 +15,27 @@ module Rcb
 
     def run!(&block)
       result =
-        case States.of(@config.tag)
+        case States.of(config.tag)
         in State::Close => s
-          s.run(@config, &block)
+          s.run(config, &block)
         in State::Open => s
-          s.run(@config, &block)
+          s.run(config, &block)
         in s
           raise "Unknown state: #{s}"
         end
 
       case result
       in Result::Ok[state, result]
-        States.update(@config.tag, state)
+        States.update(config.tag, state)
         return result
       in Result::Ng[state, error]
-        States.update(@config.tag, state)
+        States.update(config.tag, state)
         raise error
       end
     end
 
     def state
-      States.show(@config)
+      States.show(config)
     end
 
   end
