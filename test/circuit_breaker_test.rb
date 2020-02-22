@@ -38,7 +38,6 @@ class CircuitBreakerTest < Minitest::Spec
     cb2 = Rcb.for('example.com')
     cb3 = Rcb.for('other.example.com')
 
-    rand
     assert_equal cb.state, :close
     assert_equal cb2.state, :close
     assert_equal cb3.state, :close
