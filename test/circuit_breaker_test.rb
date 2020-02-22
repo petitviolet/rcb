@@ -36,39 +36,49 @@ class CircuitBreakerTest < Minitest::Spec
 
     cb = Rcb.for(:test)
     cb2 = Rcb.for(:test)
+    cb3 = Rcb.for(:other)
 
     assert_equal cb.state, :close
+    assert_equal cb2.state, :close
+    assert_equal cb3.state, :close
     assert_equal cb.run! { 100 }, 100
     assert_raises(CustomError) { cb.run! { raise CustomError } }
     assert_equal cb.state, :close
     assert_equal cb2.state, :close
+    assert_equal cb3.state, :close
     assert_raises(CustomError) { cb.run! { raise CustomError } }
 
     assert_equal cb.state, :open
     assert_equal cb2.state, :open
+    assert_equal cb3.state, :close
     assert_raises(Rcb::CircuitBreakerOpenError) { cb.run! { raise CustomError } }
 
     sleep 0.1
 
     assert_equal cb.state, :open
     assert_equal cb2.state, :open
+    assert_equal cb3.state, :close
     assert_raises(Rcb::CircuitBreakerOpenError) { cb.run! { raise CustomError } }
 
     sleep 0.1
 
     assert_equal cb.state, :half_open
     assert_equal cb2.state, :half_open
+    assert_equal cb3.state, :close
     assert_raises(CustomError) { cb.run! { raise CustomError } }
     assert_equal cb.state, :open
     assert_equal cb2.state, :open
+    assert_equal cb3.state, :close
 
     sleep 0.2
 
     assert_equal cb.state, :half_open
     assert_equal cb2.state, :half_open
+    assert_equal cb3.state, :close
     assert_equal cb.run! { 100 }, 100
     assert_equal cb.state, :close
     assert_equal cb2.state, :close
+    assert_equal cb3.state, :close
   end
 
 end
