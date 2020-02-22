@@ -5,7 +5,8 @@ class CircuitBreakerTest < Minitest::Spec
   end
 
   before :each do
-    Rcb::Instance::States.clear
+    Rcb::States.clear
+    Rcb::Configurations.clear
   end
 
   def test_circuit_breaker
