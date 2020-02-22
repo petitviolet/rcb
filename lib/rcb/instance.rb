@@ -15,9 +15,9 @@ module Rcb
       result =
         case States.of(@config.tag)
         in State::Close => s
-          s.run(@config.max_failure_count, &block)
+          s.run(@config, &block)
         in State::Open => s
-          s.run(@config.reset_timeout_msec, &block)
+          s.run(@config, &block)
         in s
           raise "Unknown state: #{s}"
         end
@@ -33,7 +33,7 @@ module Rcb
     end
 
     def state
-      States.of(@config.tag).state(@config.reset_timeout_msec)
+      States.show(@config)
     end
 
   end
@@ -42,6 +42,10 @@ module Rcb
 
     class States
       @states = {}
+
+      def self.show(config)
+        self.of(config.tag).state(config)
+      end
 
       def self.of(tag)
         @states[tag.to_sym] ||= State::Close.create

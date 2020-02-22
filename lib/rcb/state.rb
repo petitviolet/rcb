@@ -10,12 +10,12 @@ module Rcb::State
       new(failure_count)
     end
 
-    def run(max_failure_count, &block)
+    def run(config, &block)
       case try_call(&block)
       in Either::Right[result]
         Rcb::Result::Ok.new(self, result)
       in Either::Left[e]
-        if max_failure_count > failure_count
+        if config.max_failure_count > failure_count
           Rcb::Result::Ng.new(Close.create(failure_count + 1), e)
         else
           Rcb::Result::Ng.new(Open.create, e)
@@ -29,11 +29,11 @@ module Rcb::State
       new(Time.now.utc)
     end
 
-    def run(reset_timeout_msec, now: Time.now.utc, &block)
-      if half_open?(now, reset_timeout_msec)
+    def run(config, now: Time.now.utc, &block)
+      if half_open?(now, config.reset_timeout_msec)
         HalfOpen.run(&block)
       else
-        Rcb::Result::Ng.new(self, Rcb::CircuitBreakerOpenError.new(since))
+        Rcb::Result::Ng.new(self, Rcb::CircuitBreakerOpenError.new(config.tag, since))
       end
     end
 
@@ -55,9 +55,9 @@ module Rcb::State
   end
 
   interface do
-    def state(reset_timeout)
+    def state(config)
       case self
-      in Open if self.half_open?(reset_timeout)
+      in Open if self.half_open?(config.reset_timeout_msec)
         :half_open
       in Open
         :open
