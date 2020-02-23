@@ -1,5 +1,8 @@
 # Rcb - Ruby Circuit Breaker
 
+[![rcb](https://badge.fury.io/rb/rcb.svg)](https://badge.fury.io/rb/rcb)
+[![Actions Status](https://github.com/petitviolet/rcb/workflows/test/badge.svg)](https://github.com/petitviolet/rcb/actions)
+
 [Circuit Breaker](https://martinfowler.com/bliki/CircuitBreaker.html) implementation for/by Ruby.  
 CircuitBreaker is a great pattern to build robust system consists of bunch of microservices.
 
