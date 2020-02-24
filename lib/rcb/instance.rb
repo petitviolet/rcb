@@ -1,4 +1,3 @@
-require 'byebug'
 require 'rstructural'
 require_relative './state'
 require_relative './configuration'
