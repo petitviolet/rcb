@@ -45,20 +45,25 @@ Add configuration with specifying `tag` like:
 
 ```ruby
 Rcb.configure('fooo.com') do |config|
-    config.max_failure_count 1
+    config.open_condition.max_failure_count 1
+    config.open_condition.window_msec 1000
     config.reset_timeout_msec 100
 end
 
 Rcb.configure('hoge.com') do |config|
-    config.max_failure_count 3
+    config.open_condition.max_failure_count 3
+    config.open_condition.window_msec 3000
     config.reset_timeout_msec 300
 end
 ```
 
 These configurations are for both 'fooo.com' and 'hoge.com'.
 
-- `max_failure_count`: a threshold for execution failures. 
-    - if the breaker reaches the given `max_failure_count`, enters Open state from Close 
+- `open_condition`: a condition to decide whether trip to open from close
+    - `max_failure_count`: a threshold for execution failures. 
+        - if the breaker reaches the given `max_failure_count`, enters Open state from Close 
+    - `window_msec`: a window time(milliseconds) for failures
+        - if the breaker catched failures more than `window_msec` before, they are discarded
 - `reset_timeout_msec`: milliseconds to wait for next try
     - after the given `reset_timeout_msec`, the circuit breaker enters a Half-Open state from Open
 
