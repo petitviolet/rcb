@@ -1,8 +1,6 @@
-require_relative 'lib/rcb/version'
-
 Gem::Specification.new do |spec|
   spec.name          = "rcb"
-  spec.version       = Rcb::VERSION
+  spec.version       = '0.2.0'
   spec.authors       = ["petitviolet"]
   spec.email         = ["violethero0820@gmail.com"]
 
