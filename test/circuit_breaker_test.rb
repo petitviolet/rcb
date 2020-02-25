@@ -11,26 +11,30 @@ class CircuitBreakerTest < Minitest::Spec
 
   def test_configure
     Rcb.configure(:test) do |config|
-      config.max_failure_count 1
+      config.open_condition.max_failure_count 1
+      config.open_condition.window_msec 300
       config.reset_timeout_msec 100
     end
 
     Rcb.configure(:test2) do |config|
-      config.max_failure_count 2
+      config.open_condition.max_failure_count 2
+      config.open_condition.window_msec 600
       config.reset_timeout_msec 200
     end
 
-    assert_equal Rcb.for(:test).config, Rcb::Config.new(:test, 1, 100)
-    assert_equal Rcb.for(:test2).config, Rcb::Config.new(:test2, 2, 200)
+    assert_equal Rcb.for(:test).config, Rcb::Config.new(:test, Rcb::OpenCondition.new(1, 300), 100)
+    assert_equal Rcb.for(:test2).config, Rcb::Config.new(:test2, Rcb::OpenCondition.new(2, 600), 200)
 
-    assert_equal Rcb.for(:test3).config, Rcb::Config.new(:test3, 0, 0)
-    assert_equal Rcb.for(:test3, max_failure_count: 3).config, Rcb::Config.new(:test3, 3, 0)
-    assert_equal Rcb.for(:test3, reset_timeout_msec: 300).config, Rcb::Config.new(:test3, 0, 300)
+    assert_equal Rcb.for(:test3).config, Rcb::Config.new(:test3, Rcb::OpenCondition::DEFAULT, 1000)
+    assert_equal Rcb.for(:test3, open_condition: Rcb::OpenCondition.new(3, 900)).config,
+                 Rcb::Config.new(:test3, Rcb::OpenCondition.new(3, 900), 1000)
+    assert_equal Rcb.for(:test3, reset_timeout_msec: 300).config,
+                 Rcb::Config.new(:test3, Rcb::OpenCondition::DEFAULT, 300)
   end
 
   def test_circuit_breaker
     Rcb.configure('example.com') do |config|
-      config.max_failure_count 1
+      config.open_condition(max_failure_count: 1, window_msec: 1000)
       config.reset_timeout_msec 200
     end
 

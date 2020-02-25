@@ -15,7 +15,7 @@ module Rcb::State
       in Either::Right[result]
         Rcb::Result::Ok.new(self, result)
       in Either::Left[e]
-        if config.max_failure_count > failure_times.size
+        if config.open_condition.max_failure_count > failure_times.size
           Rcb::Result::Ng.new(Close.new(failure_times + [Time.now.utc]), e)
         else
           Rcb::Result::Ng.new(Open.create, e)

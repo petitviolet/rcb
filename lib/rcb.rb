@@ -3,9 +3,9 @@ require_relative "./rcb/configuration"
 
 module Rcb
   module ClassMethods
-    def for(tag, max_failure_count: nil, reset_timeout_msec: nil)
+    def for(tag, open_condition: nil, reset_timeout_msec: nil)
       config = Rcb::Configurations.for(tag,
-                                       max_failure_count: max_failure_count,
+                                       open_condition: open_condition,
                                        reset_timeout_msec: reset_timeout_msec)
       Instance.new(config)
     end
