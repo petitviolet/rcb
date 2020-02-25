@@ -10,13 +10,15 @@ module Rcb::State
       new([])
     end
 
-    def run(config, &block)
+    def run(config, now: Time.now.utc, &block)
       case try_call(&block)
       in Either::Right[result]
         Rcb::Result::Ok.new(self, result)
       in Either::Left[e]
-        if config.open_condition.max_failure_count > failure_times.size
-          Rcb::Result::Ng.new(Close.new(failure_times + [Time.now.utc]), e)
+        old_limit = now - (config.open_condition.window_msec / 1000.0)
+        refreshed_failure_times = failure_times.filter { |ft| old_limit <= ft } + [now]
+        if refreshed_failure_times.size < config.open_condition.max_failure_count
+          Rcb::Result::Ng.new(Close.new(refreshed_failure_times), e)
         else
           Rcb::Result::Ng.new(Open.create, e)
         end
