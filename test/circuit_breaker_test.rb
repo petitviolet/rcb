@@ -28,11 +28,73 @@ class CircuitBreakerTest < Minitest::Spec
     assert_equal Rcb.for(:test3).config, Rcb::Config.new(:test3, Rcb::OpenCondition::DEFAULT, 1000)
     assert_equal Rcb.for(:test3, open_condition: Rcb::OpenCondition.new(3, 900)).config,
                  Rcb::Config.new(:test3, Rcb::OpenCondition.new(3, 900), 1000)
+
     assert_equal Rcb.for(:test3, reset_timeout_msec: 300).config,
                  Rcb::Config.new(:test3, Rcb::OpenCondition::DEFAULT, 300)
   end
 
-  def test_circuit_breaker
+  def test_circuit_breaker_open_condition_max_failure_count
+    Rcb.configure('example.com') do |config|
+      config.open_condition(max_failure_count: 3, window_msec: 1000)
+      config.reset_timeout_msec 2000
+    end
+
+    cb = Rcb.for('example.com')
+    assert_equal cb.run! { 100 }, 100
+    assert_equal cb.state, :close
+
+    assert_raises(CustomError) { cb.run! { raise CustomError } }
+    assert_equal cb.state, :close
+
+    assert_raises(CustomError) { cb.run! { raise CustomError } }
+    assert_equal cb.state, :close
+
+    assert_raises(CustomError) { cb.run! { raise CustomError } }
+    assert_equal cb.state, :open
+  end
+
+  def test_circuit_breaker_open_condition_window_msec
+    Rcb.configure('example.com') do |config|
+      config.open_condition(max_failure_count: 2, window_msec: 100)
+      config.reset_timeout_msec 2000
+    end
+
+    cb = Rcb.for('example.com')
+    assert_equal cb.run! { 100 }, 100
+    assert_equal cb.state, :close
+
+    assert_raises(CustomError) { cb.run! { raise CustomError } }
+    assert_equal cb.state, :close
+
+    sleep 0.1
+
+    assert_equal cb.state, :close
+    assert_raises(CustomError) { cb.run! { raise CustomError } }
+    assert_equal cb.state, :close
+
+    sleep 0.1
+
+    assert_equal cb.state, :close
+    assert_raises(CustomError) { cb.run! { raise CustomError } }
+    assert_equal cb.state, :close
+  end
+
+  def test_circuit_breaker_reset_timeout
+    Rcb.configure('example.com') do |config|
+      config.open_condition(max_failure_count: 1, window_msec: 1000)
+      config.reset_timeout_msec 200
+    end
+    cb = Rcb.for('example.com')
+    assert_equal cb.run! { 100 }, 100
+    assert_raises(CustomError) { cb.run! { raise CustomError } }
+    assert_equal cb.state, :open
+    sleep 0.1
+    assert_equal cb.state, :open
+    sleep 0.1
+    assert_equal cb.state, :half_open
+  end
+
+  def test_multiple_circuit_breakers
     Rcb.configure('example.com') do |config|
       config.open_condition(max_failure_count: 1, window_msec: 1000)
       config.reset_timeout_msec 200
@@ -46,10 +108,6 @@ class CircuitBreakerTest < Minitest::Spec
     assert_equal cb2.state, :close
     assert_equal cb3.state, :close
     assert_equal cb.run! { 100 }, 100
-    assert_raises(CustomError) { cb.run! { raise CustomError } }
-    assert_equal cb.state, :close
-    assert_equal cb2.state, :close
-    assert_equal cb3.state, :close
     assert_raises(CustomError) { cb.run! { raise CustomError } }
 
     assert_equal cb.state, :open
@@ -84,5 +142,4 @@ class CircuitBreakerTest < Minitest::Spec
     assert_equal cb2.state, :close
     assert_equal cb3.state, :close
   end
-
 end
