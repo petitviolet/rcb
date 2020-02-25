@@ -5,9 +5,9 @@ require_relative './error'
 module Rcb::State
   extend ADT
 
-  Close = data :failure_count do
-    def self.create(failure_count = 0)
-      new(failure_count)
+  Close = data :failure_times do
+    def self.create
+      new([])
     end
 
     def run(config, &block)
@@ -15,8 +15,8 @@ module Rcb::State
       in Either::Right[result]
         Rcb::Result::Ok.new(self, result)
       in Either::Left[e]
-        if config.max_failure_count > failure_count
-          Rcb::Result::Ng.new(Close.create(failure_count + 1), e)
+        if config.max_failure_count > failure_times.size
+          Rcb::Result::Ng.new(Close.new(failure_times + [Time.now.utc]), e)
         else
           Rcb::Result::Ng.new(Open.create, e)
         end
