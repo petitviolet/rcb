@@ -1,5 +1,6 @@
 require 'rstructural'
 require_relative './state'
+require_relative './state_store'
 require_relative './configuration'
 require_relative './error'
 
@@ -8,13 +9,14 @@ module Rcb
     attr_reader :config
 
     # @param config [Rcb::Config]
-    def initialize(config)
+    def initialize(config, state_store: Rcb::StateStore)
       @config = config
+      @state_store = state_store
     end
 
     def run!(&block)
       result =
-        case States.of(config.tag)
+        case @state_store.get(config.tag)
         in State::Close => s
           s.run(config, &block)
         in State::Open => s
@@ -25,40 +27,17 @@ module Rcb
 
       case result
       in Result::Ok[state, result]
-        States.update(config.tag, state)
+        @state_store.update(config.tag, state)
         return result
       in Result::Ng[state, error]
-        States.update(config.tag, state)
+        @state_store.update(config.tag, state)
         raise error
       end
     end
 
     def state
-      States.show(config)
+      @state_store.get(config.tag).show_state(config)
     end
-
   end
-
-  private
-
-    class States
-      @states = {}
-
-      def self.show(config)
-        self.of(config.tag).state(config)
-      end
-
-      def self.of(tag)
-        @states[tag.to_sym] ||= State::Close.create
-      end
-
-      def self.update(tag, state)
-        @states[tag] = state
-      end
-
-      def self.clear
-        @states = {}
-      end
-    end
 
 end

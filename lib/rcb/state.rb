@@ -57,7 +57,7 @@ module Rcb::State
   end
 
   interface do
-    def state(config)
+    def show_state(config)
       case self
       in Open if self.half_open?(config.reset_timeout_msec)
         :half_open
