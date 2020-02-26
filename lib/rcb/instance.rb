@@ -9,7 +9,7 @@ module Rcb
     attr_reader :config
 
     # @param config [Rcb::Config]
-    def initialize(config, state_store: Rcb::StateStore)
+    def initialize(config, state_store: Rcb::StateStore::InMemory)
       @config = config
       @state_store = state_store
     end

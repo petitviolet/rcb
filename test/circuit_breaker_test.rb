@@ -5,7 +5,7 @@ class CircuitBreakerTest < Minitest::Spec
   end
 
   before :each do
-    Rcb::StateStore.clear
+    Rcb::StateStore::InMemory.clear
     Rcb::Configurations.clear
   end
 
