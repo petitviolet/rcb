@@ -9,14 +9,14 @@ module Rcb
     attr_reader :config
 
     # @param config [Rcb::Config]
-    def initialize(config, state_store: Rcb::StateStore::InMemory)
+    def initialize(config, state_store:)
       @config = config
-      @state_store = state_store
+      @state_store = state_store || Rcb::StateStore::InMemory
     end
 
     def run!(&block)
       result =
-        case @state_store.get(config.tag)
+        case get_state
         in State::Close => s
           s.run(config, &block)
         in State::Open => s
@@ -36,7 +36,13 @@ module Rcb
     end
 
     def state
-      @state_store.get(config.tag).show_state(config)
+      get_state.show_state(config)
+    end
+
+    private
+
+    def get_state
+      @state_store.get(config.tag) || State::Close.create
     end
   end
 

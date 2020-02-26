@@ -7,7 +7,7 @@ module Rcb
       @states = {}
 
       def self.get(tag)
-        @states[tag.to_sym] ||= State::Close.create
+        @states[tag.to_sym]
       end
 
       def self.update(tag, state)
