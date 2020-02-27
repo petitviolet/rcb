@@ -11,7 +11,7 @@ module Rcb::State
     end
 
     def run(config, now: Time.now.utc, &block)
-      case try_call(&block)
+      case Either.try { block.call }
       in Either::Right[result]
         Rcb::Result::Ok.new(self, result)
       in Either::Left[e]
@@ -47,7 +47,7 @@ module Rcb::State
   HalfOpen = const do
     # only executed from Open#run
     def run(&block)
-      case try_call(&block)
+      case Either.try { block.call }
       in Either::Right[result]
         Rcb::Result::Ok.new(Close.create, result)
       in Either::Left[e]
@@ -66,15 +66,6 @@ module Rcb::State
       in Close
         :close
       end
-    end
-
-    private
-
-    def try_call(&block)
-      result = block.call
-      Either.right(result)
-    rescue => e
-      Either.left(e)
     end
   end
 end
