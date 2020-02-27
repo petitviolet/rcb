@@ -5,42 +5,37 @@ class StateStoreTest < Minitest::Spec
   end
 
   class FileStore
-    @file_name = 'tmp.marshal'
+    class << self
+      FILE_NAME = 'tmp.marshal'.freeze
 
-    def self.get(tag)
-      with_file('rb') do |file|
-        states = Marshal.load(file)
-        states[tag]
-      end
-    end
-
-    def self.update(tag, state)
-      states = {}
-      with_file('rb') do |file|
-        states = Marshal.load(file)
+      def get(tag)
+        read[tag]
       end
 
-      states[tag] = state
-
-      Marshal.dump(states, File.new(@file_name, 'wb')).close
-    end
-
-    def self.with_file(mode, &block)
-      file = File.open(@file_name, mode)
-      begin
-        block.call(file)
-      ensure
-        file.close
+      def update(tag, state)
+        states = read
+        states[tag] = state
+        write(states)
       end
-    end
 
-    def self.prepare!
-      # clear and set initial value
-      Marshal.dump({}, File.new(@file_name, 'wb')).close
-    end
+      def prepare!
+        # clear and set initial value
+        write({})
+      end
 
-    def self.clear
-      File.delete(@file_name) rescue nil
+      def clear
+        File.delete(FILE_NAME) rescue nil
+      end
+
+      private
+
+        def write(obj)
+          File.open(FILE_NAME, 'wb') { |file| Marshal.dump(obj, file) }
+        end
+
+        def read
+          File.open(FILE_NAME, 'rb') { |file| Marshal.load(file) }
+        end
     end
   end
 
