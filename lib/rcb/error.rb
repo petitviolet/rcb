@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Rcb
   class CircuitBreakerOpenError < RuntimeError
     def initialize(tag, since)
